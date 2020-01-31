@@ -5,10 +5,16 @@
 
 VERSION=0.2
 
-A=179	      # 1º IP block
-B=127	      # 2º IP block
-C=0 	      # 3º IP block
-D=1 	      # 4º IP block
+INPUT="$1"
+
+echo -e "\nStarting IP: $1, end: 255.255.255.0\n"
+
+INPUT=( ${INPUT//'.'/' '} )
+
+A=${INPUT[0]}
+B=${INPUT[1]}
+C=${INPUT[2]}
+D=${INPUT[3]}
 
 TIMEOUT=10     # curl timeout flag
 MIN_RAM=256000 # minimum free memory required (KB)
