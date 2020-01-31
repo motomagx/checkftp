@@ -10,4 +10,5 @@ Usage (IP v4 only):
 Enable running:
 
 $ chmod +x checkftp.sh
+
 $ ./checkftp.sh 192.168.0.1
