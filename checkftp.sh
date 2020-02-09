@@ -3,7 +3,7 @@
 # CheckFTP 
 # https://github.com/motomagx/checkftp
 
-VERSION=0.2
+VERSION=0.2a
 
 INPUT="$1"
 
@@ -93,6 +93,7 @@ test_protocols()
 	FTP_ON=0
 	HTTP_ON=0
 	CHECK=0
+	TITLE=0
 	TEST_CONTENT_HTTP="`curl $IP1 --connect-timeout "$TIMEOUT" --silent`"
 
 	if [ "x$TEST_CONTENT_HTTP" != "x" ]
@@ -210,6 +211,7 @@ Date: `date +%d/%m/%Y` - Time: `date +%Hh%Mm%Ss` - Start: $A.$B.$C.$D - End: 255
 			DESCRIPTION=""
 			TEXT_LOG=""
 			TEXT_LOG1=""
+			FOUND_DESCRIPTION=0
 
 			if [ -f "ftp/ip/$IP1/http.htm" ]
 			then
@@ -231,11 +233,50 @@ Date: `date +%d/%m/%Y` - Time: `date +%Hh%Mm%Ss` - Start: $A.$B.$C.$D - End: 255
 							HTTP_TEXT="$DESCRIPTION"
 							TEXT_LOG="${FIND_TEXT[$COUNTER_FIND]}"
 							TEXT_LOG1="- $TEXT_LOG"
+							FOUND_DESCRIPTION=1
 						fi
 
 						COUNTER_FIND=$(($COUNTER_FIND+1))
 					done
+
+					CHECK_TITLE=`cat "ftp/ip/$IP1/http.htm" | grep -m 1 '<title>'`
+					CHECK_TITLE1=`cat "ftp/ip/$IP1/http.htm" | grep -m 1 '<title>' | wc -l`
+
+					if [ "$CHECK_TITLE1" != 0 ]
+					then
+						GET_TITLE=`cat "ftp/ip/$IP1/http.htm"`
+
+						GET_TITLE=${GET_TITLE/'<title>'/' <title> '}
+						GET_TITLE=${GET_TITLE/'</title>'/' </title> '}
+						GET_TITLE=( $GET_TITLE )
+
+						COUNTER_TITLE=0
+
+						while [ "${GET_TITLE[$COUNTER_TITLE]}" != "<title>" ]
+						do
+							COUNTER_TITLE=$(($COUNTER_TITLE+1))
+						done
+
+						COUNTER_TITLE=$(($COUNTER_TITLE+1))
+			
+						PAGE_TITLE=""
+
+						while [ "${GET_TITLE[$COUNTER_TITLE]}" != "</title>" ]
+						do
+							PAGE_TITLE="$PAGE_TITLE ${GET_TITLE[$COUNTER_TITLE]}"
+							COUNTER_TITLE=$(($COUNTER_TITLE+1))
+						done
+
+						PAGE_TITLE=( $PAGE_TITLE )
+						PAGE_TITLE="${PAGE_TITLE[*]}"
+
+						HTTP_TEXT="$PAGE_TITLE"
+						TEXT_LOG="$PAGE_TITLE"
+						TEXT_LOG1="- $TEXT_LOG"
+					fi				
+
 				else
+
 					DESCRIPTION="Empty or login page."
 					HTTP_TEXT="$DESCRIPTION"
 					TEXT_LOG="$DESCRIPTION"
@@ -299,4 +340,3 @@ do
 		#fi
 	fi
 done
-
