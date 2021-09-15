@@ -3,7 +3,7 @@
 # CheckFTP 
 # https://github.com/motomagx/checkftp
 
-VERSION=0.2a
+VERSION=0.2b
 
 INPUT="$1"
 
@@ -15,6 +15,8 @@ A=${INPUT[0]}
 B=${INPUT[1]}
 C=${INPUT[2]}
 D=${INPUT[3]}
+
+DNS="8.8.8.8,8.8.4.4,208.67.222.222,208.67.220.220"
 
 TIMEOUT=10     # curl timeout flag
 MIN_RAM=256000 # minimum free memory required (KB)
@@ -43,21 +45,9 @@ then
 	fi
 fi
 
-if [ ! -d ftp ]
-then
-	mkdir ftp
-fi
-
-if [ ! -d "ftp/ramdisk" ]
-then
-	mkdir "ftp/ramdisk"
-fi
-
-if [ ! -d "ftp/ip" ]
-then
-	mkdir "ftp/ip"
-fi
-
+mkdir -p "ftp/ramdisk"
+mkdir -p "ftp/ip"
+mkdir -p "ftp/by_title"
 
 if [ -f "ftp/$IP_FILE.htm" ]
 then
@@ -107,7 +97,7 @@ test_protocols()
 
 		wget "$IP1" -O "ftp/ip/$IP1/http.htm" --timeout=$TIMEOUT -q
 
-		STATUS_HTTP="[HTTP] "
+		STATUS_HTTP="\033[32m[HTTP] \033[m"
 		HTTP_ON=1
 		CHECK=1
 	fi
@@ -125,10 +115,20 @@ test_protocols()
 
 		wget "ftp://$IP1" -O "ftp/ip/$IP1/ftp.htm" --timeout=$TIMEOUT -q
 
-		STATUS_FTP="[FTP] "
+		STATUS_FTP="\033[36m[FTP] \033[m"
 		FTP_ON=1
 		CHECK=1
 	fi
+
+	TEST_CONTENT_SSH=`nmap $IP1 -p 22 --dns-servers $DNS`
+
+	if [ "`echo $TEST_CONTENT_SSH | grep 'tcp open' | wc -l`" == 1 ]
+	then
+		STATUS_SSH="\033[31m[SSH] \033[m"
+		SSH_ON=1
+		CHECK=1
+	fi
+
 
 	if [ ! -f "ftp/$IP_FILE.htm" ]
 	then
@@ -272,6 +272,26 @@ Date: `date +%d/%m/%Y` - Time: `date +%Hh%Mm%Ss` - Start: $A.$B.$C.$D - End: 255
 
 						HTTP_TEXT="$PAGE_TITLE"
 						TEXT_LOG="$PAGE_TITLE"
+
+						if [ $USER == "root" ]
+						then
+							if [ -d "ftp/by_title/$PAGE_TITLE" ]
+							then
+								COUNTER=1
+
+								while [ -d "ftp/by_title/$PAGE_TITLE ($COUNTER)" ]
+								do
+									COUNTER=$(($COUNTER+1))
+								done
+
+								ln -s "$PWD/ftp/ip/$IP1" "$PWD/ftp/by_title/$PAGE_TITLE ($COUNTER)"
+							else
+								ln -s "$PWD/ftp/ip/$IP1" "$PWD/ftp/by_title/$PAGE_TITLE"
+							fi
+							chmod 777 -R "$PWD/ftp/by_title/"
+						fi
+							
+
 						TEXT_LOG1="- $TEXT_LOG"
 					fi				
 
@@ -302,7 +322,7 @@ Date: `date +%d/%m/%Y` - Time: `date +%Hh%Mm%Ss` - Start: $A.$B.$C.$D - End: 255
 			fi
 		fi
 
-		echo "[$TIME] - $IP1 - $STATUS_HTTP$STATUS_FTP$TEXT_LOG1"
+		echo -e "[$TIME] - $IP1 - $STATUS_SSH$STATUS_HTTP$STATUS_FTP$TEXT_LOG1"
 	fi
 }
 
@@ -322,7 +342,7 @@ run()
 while true
 do
 	#echo "$A.$B.$C.$D"
-	increase
+	
 
 	TEST="`cat /proc/meminfo | grep MemFree`"
 	TEST=${TEST/"MemFree:"/}
@@ -332,11 +352,14 @@ do
 	then
 		sleep 1
 	else
-		#if [ -f "ftp/ip/$A.$B.$C.$D/http.htm" ]
-		#then
-		#	echo "Ignoring: $A.$B.$C.$D" &
-		#else
-			run "$A.$B.$C.$D" &
-		#fi
+		run "$A.$B.$C.$D" &
+		increase
 	fi
 done
+
+
+
+
+
+
+
