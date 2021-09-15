@@ -3,7 +3,7 @@
 # CheckFTP 
 # https://github.com/motomagx/checkftp
 
-VERSION=0.2b
+VERSION=0.2a
 
 INPUT="$1"
 
@@ -319,6 +319,8 @@ Date: `date +%d/%m/%Y` - Time: `date +%Hh%Mm%Ss` - Start: $A.$B.$C.$D - End: 255
 			if [ "$DU" != 0 ]
 			then
 				echo "$HTML" >> "ftp/$IP_FILE.htm"
+				mkdir -p "ftp/ip/$IP1"
+				echo '<html><head><title>Redirecting...</title><meta http-equiv = "refresh" content = "0; url = http://'$IP1'" /></head></html>' > "ftp/ip/$IP1/redirect.htm"
 			fi
 		fi
 
