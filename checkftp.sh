@@ -3,7 +3,9 @@
 # CheckFTP 
 # https://github.com/motomagx/checkftp
 
-VERSION=0.2a
+# Deps: axel wget nmap bc
+
+VERSION=0.2b
 
 INPUT="$1"
 
