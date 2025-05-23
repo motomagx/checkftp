@@ -5,7 +5,7 @@
 
 # Deps: axel wget nmap bc
 
-VERSION=0.2b
+VERSION=0.3
 
 INPUT="$1"
 
@@ -79,62 +79,10 @@ increase()
 	fi
 }
 
-test_protocols()
+
+update_html_code()
 {
-	IP1="$1"
-	FTP_ON=0
-	HTTP_ON=0
-	CHECK=0
-	TITLE=0
-	TEST_CONTENT_HTTP="`curl $IP1 --connect-timeout "$TIMEOUT" --silent`"
-
-	if [ "x$TEST_CONTENT_HTTP" != "x" ]
-	then
-		#echo "IP $IP1 com HTTP ativo"
-
-		if [ ! -d "ftp/ip/$IP1" ]
-		then
-			mkdir "ftp/ip/$IP1"
-		fi
-
-		wget "$IP1" -O "ftp/ip/$IP1/http.htm" --timeout=$TIMEOUT -q
-
-		STATUS_HTTP="\033[32m[HTTP] \033[m"
-		HTTP_ON=1
-		CHECK=1
-	fi
-
-	TEST_CONTENT_FTP="`curl ftp://$IP1 --connect-timeout "$TIMEOUT" --silent`"
-
-	if [ "x$TEST_CONTENT_FTP" != "x" ]
-	then
-		#echo "IP $IP1 com FTP ativo"
-
-		if [ ! -d "ftp/ip/$IP1" ]
-		then
-			mkdir "ftp/ip/$IP1"
-		fi
-
-		wget "ftp://$IP1" -O "ftp/ip/$IP1/ftp.htm" --timeout=$TIMEOUT -q
-
-		STATUS_FTP="\033[36m[FTP] \033[m"
-		FTP_ON=1
-		CHECK=1
-	fi
-
-	TEST_CONTENT_SSH=`nmap $IP1 -p 22 --dns-servers $DNS`
-
-	if [ "`echo $TEST_CONTENT_SSH | grep 'tcp open' | wc -l`" == 1 ]
-	then
-		STATUS_SSH="\033[31m[SSH] \033[m"
-		SSH_ON=1
-		CHECK=1
-	fi
-
-
-	if [ ! -f "ftp/$IP_FILE.htm" ]
-	then
-		CODE="
+CODE_TEMP="
 <head>
 <style type='text/css'>
 .title {
@@ -189,8 +137,133 @@ Date: `date +%d/%m/%Y` - Time: `date +%Hh%Mm%Ss` - Start: $A.$B.$C.$D - End: 255
 		<div class='div_title'>
 			FTP</div>
 		</td>
+		<td style='width: 30%; height: 30'>
+		<div class='div_title'>
+			.env</div>
+		</td>
 	</tr> 
 </table>"
+
+	echo "$CODE_TEMP"
+}
+
+test_http()
+{
+	TEST_CONTENT_HTTP="`curl $IP1 --connect-timeout "$TIMEOUT" --silent`"
+	if [ "x$TEST_CONTENT_HTTP" != "x" ]
+	then
+		#echo "IP $IP1 com HTTP ativo"
+
+		if [ ! -d "ftp/ip/$IP1" ]
+		then
+			mkdir "ftp/ip/$IP1"
+		fi
+
+		wget "$IP1" -O "ftp/ip/$IP1/http.htm" --timeout=$TIMEOUT -q
+
+		STATUS_HTTP="\033[32m[HTTP] \033[m"
+		HTTP_ON=1
+		CHECK=1
+	fi
+}
+
+test_ftp()
+{
+	TEST_CONTENT_FTP="`curl ftp://$IP1 --connect-timeout "$TIMEOUT" --silent`"
+
+	if [ "x$TEST_CONTENT_FTP" != "x" ]
+	then
+		#echo "IP $IP1 com FTP ativo"
+
+		if [ ! -d "ftp/ip/$IP1" ]
+		then
+			mkdir "ftp/ip/$IP1"
+		fi
+
+		wget "ftp://$IP1" -O "ftp/ip/$IP1/ftp.htm" --timeout=$TIMEOUT -q
+
+		STATUS_FTP="\033[36m[FTP] \033[m"
+		FTP_ON=1
+		CHECK=1
+	fi
+}
+	
+	
+test_ssh()
+{
+	TEST_CONTENT_SSH=`nmap $IP1 -p 22 --dns-servers $DNS`
+
+	if [ "`echo $TEST_CONTENT_SSH | grep 'tcp open' | wc -l`" == 1 ]
+	then
+		STATUS_SSH="\033[31m[SSH] \033[m"
+		SSH_ON=1
+		CHECK=1
+	fi
+}
+
+
+
+test_env()
+{
+	IGNORE_ENV=0
+	TEST_CONTENT_ENV=$(curl -o /dev/null -s -w "%{http_code}" "$IP1/.env")
+	TEST_CONTENT_ENV2=$( echo $TEST_CONTENT_ENV | grep 200 | wc -l )
+	ENV_SIZE=$(curl -sI "$IP1/.env" | grep -i Content-Length | awk '{print $2}' | tr -d '\r')
+
+	if [ -z "$ENV_SIZE" ]
+	then
+		IGNORE_ENV=1
+	elif [ "$ENV_SIZE" -eq 0 ]
+	then
+		IGNORE_ENV=1
+	fi
+
+	# Ignore checking if .env is already flaged as "ignore"
+	if [ $IGNORE_ENV == 0 ]
+	then
+		TEST_CONTENT_ENV_HTML=$(curl -sS "$IP1/.env")
+		TEST_CONTENT_ENV_HTML2=$( echo $TEST_CONTENT_ENV_HTML | grep -i "html" | wc -l )
+
+		# Ignore .env file in case of html content:
+		if [ $TEST_CONTENT_ENV_HTML2 != 0 ]
+		then
+			IGNORE_ENV=1
+		fi
+	fi
+
+	
+	if [ "$TEST_CONTENT_ENV2" == 1 ]
+	then
+		if [ $IGNORE_ENV == 0 ]
+		then
+			STATUS_ENV="\033[31m[.ENV] \033[m"
+			ENV_ON=1
+			CHECK=1
+		fi
+	fi
+
+
+}
+
+test_protocols()
+{
+	IP1="$1"
+	FTP_ON=0
+	HTTP_ON=0
+	ENV_ON=0
+	CHECK=0
+	TITLE=0
+
+
+	#test_http
+	#test_ftp
+	#test_ssh
+	test_env
+	
+
+	if [ ! -f "ftp/$IP_FILE.htm" ]
+	then
+		CODE=$( update_html_code )
 		echo "$CODE" > "ftp/$IP_FILE.htm"
 	fi
 
@@ -316,6 +389,8 @@ Date: `date +%d/%m/%Y` - Time: `date +%Hh%Mm%Ss` - Start: $A.$B.$C.$D - End: 255
 		<a href='http://$IP1' target='_blank'>$HTTP_TEXT</a></span></td>
 		<td style='width: 30%' class='text_center_link'>
 		<a href='ftp://$IP1' target='_blank'>$FTP_TEXT</a></td>
+		<td style='width: 30%' class='text_center_link'>
+		<a href='http://$IP1/.env' target='_blank'>[.env]</a></td>
 </tr></table>"
 
 			if [ "$DU" != 0 ]
@@ -326,7 +401,7 @@ Date: `date +%d/%m/%Y` - Time: `date +%Hh%Mm%Ss` - Start: $A.$B.$C.$D - End: 255
 			fi
 		fi
 
-		echo -e "[$TIME] - $IP1 - $STATUS_SSH$STATUS_HTTP$STATUS_FTP$TEXT_LOG1"
+		echo -e "[$TIME] - $IP1 - $STATUS_SSH$STATUS_HTTP$STATUS_FTP$STATUS_ENV$TEXT_LOG1"
 	fi
 }
 
