@@ -7,7 +7,7 @@ We are not responsible for misuse. This tool has the sole purpose of network dia
 
 Usage (IP v4 only):
 
-Get the code:
+Get the code:<br>
 $ git clone https://github.com/motomagx/checkftp.git<br>
 $ cd checkftp && chmod +x checkftp.sh
 
