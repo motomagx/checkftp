@@ -12,6 +12,12 @@ SOLO=0
 DEBUG=0
 DNS="8.8.8.8,8.8.4.4,208.67.222.222,208.67.220.220"
 
+if [ "x$1" == "x" ]
+then
+	echo "Input an IP, modafuka!"
+	exit
+fi
+
 if [ "x$2" == "xsolo" ]
 then
 	SOLO=1
@@ -214,9 +220,3 @@ else
 		fi
 	done
 fi
-
-
-
-
-
-
