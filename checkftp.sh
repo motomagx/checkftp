@@ -14,7 +14,7 @@ DNS="8.8.8.8,8.8.4.4,208.67.222.222,208.67.220.220"
 
 if [ "x$1" == "x" ]
 then
-	echo "Input an IP, modafuka!"
+	echo "Input an IP, modafuka! I'm not Akinator (yet)."
 	exit
 fi
 
