@@ -8,12 +8,12 @@ We are not responsible for misuse. This tool has the sole purpose of network dia
 Usage (IP v4 only):
 
 Get the code:
-$ git clone https://github.com/motomagx/checkftp.git
+$ git clone https://github.com/motomagx/checkftp.git<br>
 $ cd checkftp && chmod +x checkftp.sh
 
-Run from IP to 255.255.255.255:
+Run from IP to 255.255.255.255:<br>
 $ ./checkftp.sh 192.168.0.1
 
-Run solo IP
+Run solo IP<br>
 $ ./checkftp.sh 192.168.0.1 solo
 
